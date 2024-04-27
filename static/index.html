@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Менеджер Паролей</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+        }
+        .credential {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+<h1>Менеджер паролей</h1>
+<div>
+    <h2>Добавить новую запись</h2>
+    URL: <input type="text" id="url"><br>
+    Логин: <input type="text" id="login"><br>
+    Пароль: <input type="password" id="password"><br>
+    <button onclick="addCredential()">Добавить</button>
+</div>
+<h2>Список записей</h2>
+<div id="credentials"></div>
+
+<script>
+    function fetchCredentials() {
+        axios.get('/credentials')
+            .then(function (response) {
+                const credentials = response.data;
+                const list = document.getElementById('credentials');
+                list.innerHTML = '';
+                credentials.forEach(cred => {
+                    list.innerHTML += `<div class="credential">
+                            <p>${cred.id}: ${cred.url}, ${cred.login}, ${cred.password}</p>
+                            <button onclick="deleteCredential(${cred.id})">Удалить</button>
+                            <button onclick="editCredential(${cred.id}, '${cred.url}', '${cred.login}', '${cred.password}')">Редактировать</button>
+                        </div>`;
+                });
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+    function addCredential() {
+        const url = document.getElementById('url').value;
+        const login = document.getElementById('login').value;
+        const password = document.getElementById('password').value;
+        axios.post('/credentials', {
+            url: url,
+            login: login,
+            password: password
+        })
+            .then(function (response) {
+                console.log(response);
+                fetchCredentials();
+                document.getElementById('url').value = '';
+                document.getElementById('login').value = '';
+                document.getElementById('password').value = '';
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+    function deleteCredential(id) {
+        axios.delete(`/credentials/${id}`)
+            .then(function (response) {
+                console.log(response);
+                fetchCredentials();
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+    function editCredential(id, url, login, password) {
+        document.getElementById('url').value = url;
+        document.getElementById('login').value = login;
+        document.getElementById('password').value = password;
+        const button = document.createElement('button');
+        button.innerText = 'Сохранить изменения';
+        button.onclick = () => updateCredential(id);
+        document.body.appendChild(button);
+    }
+
+    function updateCredential(id) {
+        const url = document.getElementById('url').value;
+        const login = document.getElementById('login').value;
+        const password = document.getElementById('password').value;
+        axios.put(`/credentials/${id}`, {
+            url: url,
+            login: login,
+            password: password
+        })
+            .then(function (response) {
+                console.log(response);
+                fetchCredentials();
+                document.getElementById('url').value = '';
+                document.getElementById('login').value = '';
+                document.getElementById('password').value = '';
+                document.body.removeChild(document.body.lastChild);
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
+
+    fetchCredentials(); // Загружаем список при загрузке страницы
+</script>
+</body>
+</html>
